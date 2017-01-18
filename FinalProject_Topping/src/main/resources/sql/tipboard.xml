@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TipBoard">
+
+	<resultMap type="tbvo" id="TipBoardListRM">
+		<result property="tipNo" column="tipNo" jdbcType="NUMERIC"/>
+		<result property="type" column="type" jdbcType="VARCHAR"/>
+		<result property="title" column="title" jdbcType="VARCHAR"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+		<result property="clipCount" column="clipCount" jdbcType="NUMERIC"/>
+		<result property="placeVO.placeId" column="placeid" jdbcType="VARCHAR"/>
+		<association property="memberVO" column="email" select="Activity.nickNameByEmail"></association>
+	</resultMap>
+	<select id="placeForTip" parameterType="string" resultMap="Place.placeRM">
+		SELECT placeid, placeName,placeDistrict
+		FROM place
+		WHERE placeid=#{value}
+	</select>
+	
+	<resultMap type="tbvo" id="TipBoardRM"  extends="TipBoardListRM">
+		<result property="content" column="content" jdbcType="VARCHAR" />
+		<result property="imgUrl" column="img_url" jdbcType="VARCHAR" />
+	</resultMap>
+	<resultMap type="uivo" id="UploadImageRM">
+		<result property="imgNo" column="imgno" jdbcType="NUMERIC" />
+		<result property="boardNo" column="boardno" jdbcType="NUMERIC" />
+		<result property="orgName" column="orgname" jdbcType="VARCHAR" />
+		<result property="newName" column="newname" jdbcType="VARCHAR" />
+		<result property="boardType" column="boardtype" jdbcType="NUMERIC" />
+		<result property="savePath" column="savepath" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<insert id="addTipToTipBoard" parameterType="tbvo">
+		<selectKey keyProperty="tipNo" order="BEFORE" resultType="int">
+			SELECT tip_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO tipboard(tipno,email, type, title,content,write_date, placeId)
+		VALUES(#{tipNo},#{memberVO.email},#{type},#{title}
+		,#{content},sysdate,#{placeVO.placeId})
+	</insert>
+
+	<update id="updateTip" parameterType="tbvo">
+		UPDATE tipboard
+		SET type=#{type}, title=#{title}, content=#{content},
+		placeid=#{placeVO.placeId}
+		WHERE tipno=#{tipNo}
+	</update>
+	<update id="updateTipImg" parameterType="HashMap">
+		UPDATE
+		uploadimg
+		SET orgname=#{orgName}, newname=#{newName}, savepath=#{savePath}
+		WHERE imgno=#{imgNo}
+	</update>
+		
+	<delete id="deleteFromTipBoard" parameterType="tbvo">
+		DELETE 
+		FROM tipboard
+		WHERE tipno=#{tipNo} 
+	</delete>
+	<update id="deleteTipImg" parameterType="int">
+		DELETE FROM
+		uploadimage
+		WHERE imgno=#{value} AND boardType=1
+	</update>
+
+	<select id="getCountOfAllTip" resultType="int">
+		SELECT COUNT(-1)
+		FROM
+		tipboard
+	</select>
+	
+	<select id="getCountOfTipByType" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM
+		tipboard
+		WHERE type=#{value}
+	</select>
+
+	
+	
+	<select id="getCountOfSearch" parameterType="HashMap" resultType="int">
+			SELECT COUNT(-1)
+			FROM tipboard
+		<choose>
+		<when test="type neq 'null' and type neq null">
+			<choose>
+				<when test="title neq 'null' and title neq null">
+					WHERE title LIKE '%'|| #{title} ||'%' AND type=#{type}
+				</when>
+				<otherwise>
+				WHERE type IN 
+					<foreach item="t" index="index" collection="type" open="(" close=")" separator=", ">
+						#{t}
+					</foreach>
+				</otherwise>
+			</choose>
+		</when>
+		<otherwise>
+			WHERE title LIKE '%'|| #{title} ||'%'
+		</otherwise>
+		</choose>
+	</select>
+	
+	
+	
+	<select id="getCountOfPlaceId" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM
+		tipboard
+		WHERE placeid=#{value}
+	</select>
+	<select id="getCountOfTipByPlace" resultType="int" parameterType="string">
+		SELECT COUNT(-1)
+		FROM
+		WHERE placename like '%'||'#{value}'||'%' OR placedistrict like '%'||'#{value}'||'%'
+	</select> 
+	<select id="getWriteDateOfTip" parameterType="int" resultType="string">
+		SELECT to_char(write_date,'YYYY.MM.DD') as write_date
+		FROM tipboard
+		WHERE tipNo=#{tipNo}
+	</select>
+	<select id="showTipByNo" parameterType="int" resultMap="TipBoardRM">
+		SELECT tipno,t.email,m.nickname, type, title,content, to_char(write_date,'YYYY.MM.DD') as write_date, placeId,clipCount
+		FROM tipboard t 
+		JOIN member m 
+		ON t.email = m.email
+		WHERE tipno=#{tipNo}
+	</select>
+	<select id="getTipBoardList" resultMap="TipBoardRM" parameterType="int">
+		SELECT tipNo,email, type, title,content, write_date, placeid
+		FROM
+			(SELECT tipNo, email, type,title,content,write_date, CEIL(rownum/5) as page , placeid FROM
+			(SELECT tipNo,email, type, title,content, to_char(write_date,'YYYY.MM.DD') as write_date, placeid
+			FROM tipboard
+			ORDER BY tipNo DESC))
+		WHERE page=#{value}
+	</select>
+	
+	<select id="getTipBoardSearchList" resultMap="TipBoardRM" parameterType="hashmap">
+	select * 
+	FROM (SELECT tipNo, email, type,title,content,write_date, CEIL(rownum/5) as page , placeid
+		 FROM
+		 (SELECT tipNo,email,type,title,content,to_char(write_date,'YYYY.MM.DD') as write_date,placeid
+		 FROM tipboard
+		<where>
+      		<if test="title neq 'null' and title neq null">
+          		title LIKE '%'|| #{title} ||'%'
+          		<if test="type neq 'null' and type neq null">
+          		title LIKE '%'|| #{title} ||'%' AND type=#{type}
+          		</if> 
+      		</if>
+      		<if test="type neq 'null' and type neq null">
+         		AND type IN 
+         		<foreach collection="type" item="t" index="index"  open="(" close=")" separator=",">
+           			#{t}
+         		</foreach>
+      		</if>
+      	</where>
+      ORDER BY tipNo DESC))
+	  WHERE page=#{pageNo}
+    </select>
+	
+	<select id="getTipBoardListByType" parameterType="pttvo" resultMap="TipBoardRM">
+		SELECT tipNo,nickname, type,content, title, write_date, placeid
+		FROM
+			(SELECT tipNo, nickname, type,content,title,write_date, CEIL(rownum/5) as page , placeid FROM
+			(SELECT tipNo,m.nickname, type,content, title, to_char(write_date,'YYYY.MM.DD') as write_date , placeid
+			FROM tipboard t
+			JOIN member m 
+			ON t.email = m.email
+			WHERE type=#{type}))
+		WHERE page=#{pageNo}
+	</select> 
+	
+	
+	<select id="searchTipListByPlace" parameterType="ptpvo" resultMap="TipBoardRM">
+		
+		SELECT tipNo,email, type, title,content, write_date, placeid, placename, placedistrict
+		FROM
+			(SELECT tipNo, email, type,content,title,write_date, CEIL(rownum/5) as page , placeid FROM
+			(SELECT tipNo,email, type, title,content,to_char(write_date,'YYYY.MM.DD') as write_date, placeId, p.placeName,p.placedistrict
+			FROM tipboard t
+			JOIN place p
+			ON t.placeId = p.placeId
+			WHERE p.placename like '%'||'#{placeName}'||'%' OR p.placedistrict like '%'||'#{placeName}'||'%')
+		WHERE page = #{pageNo}
+	</select> 
+	<select id="getUploadImageForTip" parameterType="int" resultMap="UploadImageRM">
+		SELECT * 
+		FROM uploadImage 
+		WHERE boardno=#{tipNo} AND boardType=1
+	</select>
+	
+	<!-- Destination 에서 해당 Tip Search 로직 -->
+	
+	<select id="getTipBoardListByPlaceId" parameterType="ptpivo" resultMap="TipBoardRM">
+		SELECT tipNo, email, nickname, type, title, content,clipcount, write_date, placeid
+      	FROM
+         (SELECT tipNo,email,nickname,type,title, content,clipcount,write_date,
+         		 CEIL(rownum/15) as page, placeid 
+      	  FROM
+         	   (SELECT tipNo, t.email, m.nickname, type, title,content, clipcount, 
+         	   			TO_CHAR(write_date,'YYYY.MM.DD') as write_date, placeid
+         	    FROM tipboard t
+         	    JOIN member m 
+         	    ON t.email = m.email
+         	    WHERE t.placeid=#{placeId}))
+         WHERE page=#{pageNo}
+	</select>
+	
+	
+	<select id="getTipBoardListByClipCount" parameterType="ptpivo" resultMap="TipBoardRM">
+		SELECT tipNo, email, type, title, content,clipcount, write_date, placeid
+      	FROM (select * from tipboard ORDER BY clipcount DESC)
+      	where rownum &lt;=3  
+	</select>
+	
+	<!-- 마이페이지 -->
+	<select id="getCountOfMyTip" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM tipboard
+		WHERE email=#{value}
+	</select>
+	<select id="getListOfMyTip" parameterType="hashmap" resultMap="TipBoardListRM">
+		SELECT tipNo, email, nickname, type, title, clipcount, write_date, placeid
+		FROM
+			(SELECT tipNo, email, nickname, type,title, clipcount, write_date, CEIL(rownum/15) as page, placeid 
+		FROM
+			(SELECT tipNo, t.email, m.nickname, type, title, clipcount, TO_CHAR(write_date,'YYYY.MM.DD') as write_date, placeid
+			FROM tipboard t
+			JOIN member m 
+			ON t.email = m.email
+			WHERE t.email=#{email}))
+		WHERE page=#{pageNo}
+	</select>
+	
+	<!-- ClipList -->
+	<resultMap type="cvo" id="clipRM">
+		<result property="clipNo" column="clipno" jdbcType="NUMERIC"/>
+		<result property="memberVO.email" column="email" jdbcType="VARCHAR"/>
+		<association property="tipBoardVO" column="tipNo" select="tipForClip"></association>
+	</resultMap>
+	<select id="tipForClip" parameterType="int" resultMap="TipBoardListRM">
+		SELECT tipno,title,TO_CHAR(write_date, 'YYYY.MM.DD') as write_date,type,email
+		FROM tipboard
+		WHERE tipno=#{value}
+	</select>
+	
+	<select id="clipWhetherCheck" parameterType="hashmap" resultType="boolean">
+		SELECT COUNT(-1)
+		FROM cliplist
+		WHERE email=#{email} AND tipno=#{tipNo}
+	</select>
+	<insert id="addClipToList" parameterType="hashMap">
+	<selectKey keyProperty="clipNo" order="BEFORE" resultType="int">
+		SELECT clip_seq.nextVal FROM dual
+	</selectKey>
+		INSERT INTO cliplist(clipno,email,tipno)
+		VALUES(#{clipNo},#{email},#{tipNo})
+	</insert>
+	<delete id="deleteClipFromList" parameterType="hashmap">
+		DELETE FROM cliplist
+		WHERE email=#{email} AND tipno=#{tipNo}
+	</delete>
+	<update id="updateClipCount" parameterType="int">
+		UPDATE tipboard
+		SET clipcount=(SELECT COUNT(-1) FROM cliplist WHERE tipno=#{value})
+		WHERE tipno=#{value}
+	</update>
+	<select id="clipCountByTipNo" parameterType="int" resultType="int">
+		SELECT COUNT(-1)
+		FROM cliplist
+		WHERE tipNo=#{tipNo}
+	</select>
+	<select id="countOfMyClip" parameterType="string" resultType="int">
+      SELECT COUNT(-1)
+      FROM cliplist
+      WHERE email=#{email}
+   </select>
+   <select id="listOfMyClip" parameterType="hashmap" resultMap="clipRM">
+      SELECT clipno, tipNo, email
+      FROM
+         (SELECT clipno, tipNo, email, CEIL(rownum/15) as page
+      FROM
+         (SELECT clipno, tipNo, email
+         FROM cliplist
+         WHERE email=#{email}))
+      WHERE page=#{pageNo}
+   </select>
+
+	
+	<!-- comment -->
+   <insert id="addCommentToTip" parameterType="cmtvo">
+      <selectKey keyProperty="commentNo" resultType="int" order="BEFORE">
+         SELECT
+         tipcomment_seq.nextVal FROM dual
+      </selectKey>
+      INSERT INTO
+      tipboardcomment
+      (commentno,email,tipno,content,write_date) VALUES
+      (#{commentNo},#{memberVO.email},#{tipBoardVO.tipNo},#{content},sysdate)
+
+   </insert>
+
+   <resultMap type="cmtvo" id="TipBoardCommentRM">
+      <result property="commentNo" column="commentno" jdbcType="NUMERIC" />
+      <result property="content" column="content" jdbcType="VARCHAR" />
+      <result property="memberVO.email" column="email" jdbcType="VARCHAR" />
+   </resultMap>
+
+   <select id="getAllCommentFromTipBoard" parameterType="int"
+      resultMap="TipBoardCommentRM">
+      SELECT email,content,commentno FROM tipboardcomment WHERE
+      tipno=#{value}
+      order by commentno desc
+   </select>
+
+   <update id="updateTipComment" parameterType="cmtvo">
+      UPDATE
+      tipboardcomment SET content=#{content} where commentno=#{commentNo}
+   </update>
+
+   <delete id="deleteTipComment" parameterType="int">
+      DELETE FROM
+      tipboardcomment WHERE commentno=#{value}
+   </delete>
+
+   <select id="getLatestCommentNo" resultType="int">
+      select
+      tipboardcomment_seq.currval from dual
+   </select>
+	
+</mapper>

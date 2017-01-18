@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="Member">
+	<!--  resultMap 지정-->
+	<resultMap type="member" id="memberSelectMap">
+	    <result property="email" column="email" />
+		<result property="nickName" column="nickName"/>
+		<result property="password" column="password" />
+		<result property="passQuestion" column="passQuestion" />
+		<result property="passAnswer" column="passAnswer" />
+		<result property="gender" column="gender" />
+		<result property="imgUrl" column="img_url" />
+		<result property="checkAdmin" column="checkAdmin" />
+		<result property="address" column="address" />
+		<result property="selfIntroduce" column="selfIntroduce"/>
+	</resultMap>
+	
+	<insert id="registerMember" parameterType="member">
+		INSERT 
+		INTO member 
+		(email, nickName, password, passQuestion, passAnswer, gender, checkAdmin, address, selfIntroduce)
+		VALUES(
+			#{email}, #{nickName}, #{password}, #{passQuestion}, #{passAnswer}, #{gender}, #{checkAdmin}, #{address}, #{selfIntroduce}
+		)
+	</insert>
+	
+	<select id="emailcheck" parameterType="string" resultType="string">
+		SELECT 
+		email
+		FROM member
+		WHERE email=#{value}
+	</select>
+	
+	<select id="nickNamecheck" parameterType="string" resultType="string">
+		SELECT 
+		nickName
+		FROM member
+		WHERE nickName=#{value}
+	</select>
+	
+	<select id="login" parameterType="member" resultMap="memberSelectMap">
+		SELECT 
+		email, nickName, password, gender, img_url, address, checkAdmin, selfIntroduce
+		FROM member
+		WHERE email=#{email} AND password=#{password}
+	</select>
+	
+	<select id="checkAnswerForPassword" parameterType="member" resultMap="memberSelectMap">
+		SELECT 
+		email, nickName, password, checkAdmin
+		FROM member
+		WHERE email=#{email} AND passQuestion=#{passQuestion} AND passAnswer=#{passAnswer}
+	</select>
+	
+	<update id="updatePassword" parameterType="member">
+		UPDATE member 
+		SET password=#{password}
+		WHERE email=#{email}
+	</update>
+	
+	<delete id="deleteMember" parameterType="string">
+		DELETE FROM member
+		WHERE email=#{value}
+	</delete>
+	
+	<!-- 이메일을 통해 회원정보를 몽땅 가지고오는 펑션. -->
+	<select id="showMember" parameterType="string" resultMap="memberSelectMap">
+		SELECT 
+		email, nickName, password, gender, img_url, address, checkAdmin, selfIntroduce
+		FROM member WHERE email=#{value}
+	</select>
+	
+	<!-- 테스트 안함 -->
+	<update id="updateUserInfo" parameterType="member">
+		UPDATE member
+		SET nickname=#{nickName}, address=#{address}, selfintroduce=#{selfIntroduce}
+		WHERE email=#{email}
+	</update>
+	
+	
+	<update id="updateUserImage" parameterType="member">
+		UPDATE member 
+		SET img_url = #{imgUrl}
+		WHERE email=#{email}
+	</update>
+	
+	
+	
+	<resultMap type="follow" id="followRM">
+		<association property="followUser" column="followuseremail" select="getUserInfoForFollow"/>
+		<association property="followerUser" column="followeruseremail" select="getUserInfoForFollow"/>
+	</resultMap>
+	<select id="getUserInfoForFollow" parameterType="string" resultMap="memberSelectMap">
+		SELECT email,nickname,img_url FROM member
+		WHERE email=#{value}
+	</select>
+	<!-- Follow -->
+	<!-- 팔로우 신청 -->
+	<select id="checkFollow" parameterType="follow" resultType="boolean">
+		SELECT COUNT(-1) FROM follow
+		WHERE followuseremail=#{followUser.email} AND followeruseremail=#{followerUser.email}
+	</select>
+	<insert id="addFollow" parameterType="follow">
+		INSERT INTO follow(followuseremail, followeruseremail)
+		VALUES(#{followUser.email},#{followerUser.email})
+	</insert>
+	<!-- 팔로우 취소 -->
+	<delete id="cancelFollow" parameterType="follow">
+		DELETE FROM follow
+		WHERE followuseremail=#{followUser.email} AND followeruseremail=#{followerUser.email}
+	</delete>
+	<!-- 해당 여행자가 팔로우한 여행자 수 가져오기 -->
+	<select id="getCountOfFollow" parameterType="member" resultType="int">
+		SELECT COUNT(-1) FROM follow
+		WHERE followeruseremail=#{email}
+	</select>
+	<!-- 해당 여행자가 팔로우한 여행자들 목록 가져오기 -->
+	<select id="getListOfFollow" parameterType="member" resultMap="followRM">
+		SELECT followuseremail
+		FROM follow 
+		WHERE followeruseremail=#{email}
+	</select>
+	<!-- 해당 여행자를 팔로우한 여행자 수 가져오기 -->
+	<select id="getCountOfMyFollower" parameterType="member" resultType="int">
+		SELECT COUNT(-1) FROM follow
+		WHERE followuseremail=#{email}
+	</select>
+	<!-- 해당 여행자를 팔로우한 여행자들 목록 가져오기 -->
+	<select id="getListOfFollower" parameterType="member" resultMap="followRM">
+		SELECT followeruseremail 
+		FROM follow
+		WHERE followuseremail=#{email}
+	</select>
+	<!-- Message -->
+	<!-- 메세지 보내기 -->
+	<insert id="sendMessageToSendTable" parameterType="message">
+		<selectKey keyProperty="messageNo" order="BEFORE" resultType="int">
+			SELECT sendmessage_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO sendmessage(messageno,senderemail,receiverEmail,messagetitle,Content,write_date)
+		VALUES(#{messageNo},#{senderEmail.email},#{receiverEmail.email},#{title},#{message},sysdate)
+	</insert>
+	<insert id="sendMessageToReceiveTable" parameterType="message">
+		<selectKey keyProperty="messageNo" order="BEFORE" resultType="int">
+			SELECT receivemessage_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO receivemessage(messageno,senderemail,receiverEmail,messagetitle,Content,write_date)
+		VALUES(#{messageNo},#{senderEmail.email},#{receiverEmail.email},#{title},#{message},sysdate)
+	</insert>
+	<delete id="deleteMessageFromSendTable" parameterType="int">
+		DELETE FROM sendmessage
+		WHERE messageNO=#{messageNo}
+	</delete>
+	<delete id="deleteMessageFromReceiveTable" parameterType="int">
+		DELETE FROM receivemessage
+		WHERE messageNO=#{messageNo}
+	</delete>
+	<resultMap type="message" id="messageRM">
+		<result property="messageNo" column="messageNo" jdbcType="NUMERIC"/>
+		<result property="title" column="messagetitle" jdbcType="VARCHAR"/>
+		<result property="message" column="content" jdbcType="VARCHAR"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+		<association property="senderEmail" column="senderEmail" select="forgetMessageList"></association>
+		<association property="receiverEmail" column="receiverEmail" select="forgetMessageList"></association>
+	</resultMap>
+	
+	<select id="forgetMessageList" parameterType="string" resultMap="memberSelectMap">
+		SELECT email,nickname
+		FROM member
+		WHERE email=#{value}
+	</select>
+	
+	<select id="getCountOfReceiveMessage" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM receivemessage
+		WHERE receiverEmail=#{email}
+	</select>
+	<!-- <select id="getReceiveMessage" parameterType="member" resultMap="messageRM">
+		SELECT messageNo,senderEmail,receiverEmail,write_date
+		FROM message
+		WHERE receiverEmail=#{email}
+	</select> -->
+	<select id="getReceiveMessage" parameterType="forGetMessage" resultMap="messageRM">
+		SELECT messageno, senderEmail, receiverEmail, write_date, messagetitle, content
+		FROM (SELECT messageno, senderEmail, receiverEmail, messagetitle, content, write_date, CEIL(rownum/15) AS page
+		FROM (SELECT messageno, senderEmail, receiverEmail, messagetitle, content, TO_CHAR(write_date, 'YYYY-MM-DD') AS write_date
+		FROM receivemessage WHERE receiveremail=#{receiverEmail} ORDER BY messageno DESC))
+		WHERE page=#{pageNo}
+	</select>
+	
+	<select id="getCountOfSendMessage" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM sendmessage
+		WHERE senderEmail=#{email}
+	</select>
+	<!-- <select id="getSendMessage" parameterType="member" resultMap="messageRM">
+		SELECT messageNo,senderEmail,receiverEmail,write_date
+		FROM message
+		WHERE senderEmail=#{email}
+	</select> -->
+	<select id="getSendMessage" parameterType="forGetMessage" resultMap="messageRM">
+		SELECT messageno, senderemail, receiveremail, write_date, messagetitle, content
+		FROM (SELECT messageno, senderEmail, receiverEmail, messagetitle, content, write_date, CEIL(rownum/15) AS page
+		FROM (SELECT messageno, senderEmail, receiverEmail, messagetitle, content, TO_CHAR(write_date, 'YYYY-MM-DD') AS write_date
+		FROM sendmessage WHERE senderemail=#{senderEmail} ORDER BY messageno DESC))
+		WHERE page=#{pageNo}
+	</select>
+	
+	
+	<select id="getSendMessageDetail" parameterType="int" resultMap="messageRM">
+		SELECT messageNo,senderEmail,receiverEmail,messagetitle, content,TO_CHAR(write_date,'YY-MM-DD hh24:mm:ss') AS write_date
+		FROM sendmessage
+		WHERE messageNo=#{value}
+	</select>
+	<select id="getReceiveMessageDetail" parameterType="int" resultMap="messageRM">
+		SELECT messageNo,senderEmail,receiverEmail,messagetitle,content,TO_CHAR(write_date,'YY-MM-DD hh24:mm:ss') AS write_date
+		FROM receivemessage
+		WHERE messageNo=#{value}
+	</select>
+	
+	<select id="getUserInfoByEmail" parameterType="string" resultMap="memberSelectMap">
+		SELECT email,nickname,img_url
+		FROM member
+		WHERE email=#{value}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

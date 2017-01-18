@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Notice">
+	<resultMap type="notice" id="NoticeRM">
+		<result property="noticeNo" column="noticeNo"/>
+		<result property="title" column="title" />
+		<result property="noticeContent" column="noticeContent" />
+		<result property="writeDate" column="write_date" />
+		<result property="hits" column="hits" />
+		<result property="memberVO.email" column="email"/>
+		<result property="memberVO.nickName" column="nickName"/>
+		<result property="memberVO.checkAdmin" column="checkAdmin"/>
+	</resultMap>
+	
+	<!-- 글쓰기 -->
+	<insert id="writeNotice" parameterType="notice">
+		<selectKey keyProperty="noticeNo" order="BEFORE" resultType="int">
+			SELECT notice_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO notice(noticeNo,title,noticeContent,write_date,email)
+		VALUES(#{noticeNo},#{title},#{noticeContent},SYSDATE,#{memberVO.email})
+	</insert>
+	
+	<!-- 글수정 -->
+	<update id="updateNotice" parameterType="notice">
+		UPDATE notice
+		SET title=#{title}, noticeContent=#{noticeContent}
+		WHERE noticeNo=#{noticeNo}
+	</update>
+	
+	<!-- 글삭제 -->
+	<delete id="deleteNotice" parameterType="int">
+		DELETE 
+		FROM notice
+		WHERE noticeNo=#{value}
+	</delete>
+	
+	<!-- 조회수증가 -->
+	<update id="updateHitsOfNotice" parameterType="int">
+		UPDATE notice
+		SET hits=hits+1
+		WHERE noticeNo=#{value}
+	</update>
+	
+	<!-- 날짜갖고오기 -->
+	<select id="selectByNoForDate" resultType="string" parameterType="int">
+		SELECT
+		to_char(write_date, 'YYYY.MM.DD') FROM notice
+		WHERE noticeNo=#{value}
+	</select>
+	
+	<!-- 전체목록 -->
+	<select id="getNoticeList" resultMap="NoticeRM" >	
+		SELECT noticeNo,title,noticeContent, nickName, hits, write_date, email
+		FROM(
+			SELECT noticeNo, title, noticeContent, nickName, hits, write_date, CEIL(rownum/5) as page, email FROM
+				(SELECT noticeNo, title, noticeContent, m.nickName, hits, to_char(write_date, 'YYYY.MM.DD') write_date, n.email
+				 FROM notice n, member m
+			 	WHERE n.email = m.email ORDER BY noticeNo DESC))
+		WHERE page=#{value}
+	</select>
+
+	<!-- 상세글보기 -->
+	<select id="showNotice" parameterType="int" resultMap="NoticeRM">
+		SELECT noticeNo,title,noticeContent,write_date,m.email,hits,m.nickName
+		FROM notice n, member m
+		WHERE n.email = m.email AND noticeNo=#{value}
+	</select>
+	
+	<!-- 총게시물의수 -->
+	<select id="totalCount" resultType="int">
+      SELECT COUNT(-1) FROM notice
+    </select>
+	
+</mapper>	
+

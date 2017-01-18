@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<properties resource="config/jdbc.properties" />
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+	<typeAliases>
+		<typeAlias type="model.vo.MemberVO" alias="member"/>
+		<typeAlias type="model.vo.PlaceVO" alias="pvo"/>
+		<typeAlias type="model.vo.ToppingListVO" alias="toppingList"/>
+		<typeAlias type="model.vo.FollowVO" alias="follow"/>
+		<typeAlias type="model.vo.MessageVO" alias="message"/>
+		<typeAlias type="model.vo.forGetMessageListVO" alias="forGetMessage"/>
+		<typeAlias type="model.vo.FreeBoardVO" alias="fbvo"/>
+		<typeAlias type="model.vo.FreeBoardListVO" alias="fblvo"/>
+		<typeAlias type="model.vo.QnAVO" alias="qnavo" />
+		<typeAlias type="model.vo.PagingQnAVO" alias="pgvo" />
+		<typeAlias type="model.vo.NoticeVO" alias="notice" />
+		<typeAlias type="model.vo.ActivityBoardVO" alias="abvo" />
+		<typeAlias type="model.vo.UploadImageVO" alias="uivo" />
+		<typeAlias type="model.vo.TipBoardVO" alias="tbvo" />
+		<typeAlias type="model.vo.PagingTipTypeVO" alias="pttvo"/>
+		<typeAlias type="model.vo.PagingTipPlaceNameVO" alias="ptpvo"/>
+		<typeAlias type="model.vo.PagingTipPlaceIdVO" alias="ptpivo"/>
+		<typeAlias type="model.vo.ToppingListVO" alias="tplvo"/>
+		<typeAlias type="model.vo.TourCheckListVO" alias="tclvo"/>
+		<typeAlias type="model.vo.ClipListVO" alias="cvo"/>
+		<typeAlias type="model.vo.ActivityAttendanceVO" alias="aavo"/>
+		<typeAlias type="model.vo.TipListVO" alias="tlvo"/>
+		<typeAlias type="model.vo.CommentVO" alias="cmtvo" />
+
+	</typeAliases>
+	<environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="UNPOOLED">
+				<property name="driver" value="${JDBC.Driver}" />
+				<property name="url" value="${JDBC.ConnectionURL}" />
+				<property name="username" value="${JDBC.Username}" />
+				<property name="password" value="${JDBC.Password}" />
+			</dataSource>
+		</environment>
+	</environments>
+
+	<mappers>
+		<mapper resource="sql/member.xml"/>
+		<mapper resource="sql/place.xml"/>
+		<mapper resource="sql/qna.xml" />
+		<mapper resource="sql/freeboard.xml" />
+		<mapper resource="sql/notice.xml" />
+		<mapper resource="sql/activity.xml" />
+		<mapper resource="sql/common.xml" />
+		<mapper resource="sql/tipboard.xml"/>
+		<mapper resource="sql/topping.xml"/>
+		<mapper resource="sql/checklist.xml"/>
+	</mappers>
+</configuration>
+
+
+
+
+
+
+

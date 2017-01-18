@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	
+<mapper namespace="Place">
+	<!-- place 매핑 -->
+	<resultMap type="pvo" id="placeRM">
+		<result property="placeId" column="placeid" jdbcType="VARCHAR"/>
+		<result property="locationVO.longtitude" column="longtitude" jdbcType="DOUBLE"/>
+		<result property="locationVO.latitude" column="latitude" jdbcType="DOUBLE"/>
+		<result property="placeName" column="placename" jdbcType="VARCHAR"/>
+		<result property="placeDistrict" column="placedistrict" jdbcType="VARCHAR"/>
+		<result property="placeImgUrl" column="placeimgurl" jdbcType="NUMERIC"/>
+		<result property="toppingCount" column="topping_count" jdbcType="VARCHAR"/>
+	</resultMap>
+	<!-- toppingList 매핑 -->
+	<resultMap type="toppingList" id="toppingListRM">
+		<result property="toppingListNo" column="toppingno" jdbcType="NUMERIC"/>
+		<!-- <result property="memberVO.email" column="email" jdbcType="VARCHAR"/> -->
+		<!-- 각 VO 정보 모두 가져오기 -->
+		<association property="memberVO" column="email" select="getMyInfo"/>
+		<association property="placeVO" column="placeid" select="getPlaceByPlaceId"/>
+		<association property="activityBoardVO" column="activityNo" select="getActivityByActivityNo"/>
+	</resultMap>
+	<!-- Activity 매핑 -->
+	<resultMap type="abvo" id="activityRM">
+		<result property="activityNo" column="activityno" jdbcType="NUMERIC"/>
+		<result property="activityTitle" column="activity_title" jdbcType="VARCHAR"/>
+		<result property="memberVO.email" column="email" jdbcType="VARCHAR"/>
+		<result property="content" column="activity_type" jdbcType="VARCHAR"/>
+		<result property="nowAttendance" column="nowattendance" jdbcType="NUMERIC"/>
+		<result property="maxAttendance" column="maxattendance" jdbcType="NUMERIC"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+		<result property="startDate" column="start_date" jdbcType="DATE"/>
+		<result property="endDate" column="end_date" jdbcType="DATE"/>
+		<result property="toppingCount" column="topping_count" jdbcType="NUMERIC"/>
+		<result property="activityStatus" column="activity_status" jdbcType="NUMERIC"/>
+		<result property="activityType" column="activity_type" jdbcType="VARCHAR"/>
+		<result property="placeVO.placeId" column="placeid" jdbcType="VARCHAR"/>
+		<result property="placeVO.placeDistrict" column="placedistrict" jdbcType="VARCHAR"/>
+		<!-- <result property="img" column="" jdbcType=""/> -->
+	</resultMap>
+	
+	<!-- ToppingList 전체 정보가져오기 -->
+	
+	<select id="getPlaceByPlaceId" parameterType="string" resultMap="placeRM">
+		SELECT placeid,longtitude,latitude,placename,placeDistrict,placeimgurl,topping_count
+		FROM place
+		WHERE placeid=#{value}
+	</select>
+	<select id="getActivityByActivityNo" parameterType="string" resultMap="Activity.ActivityListRM">
+		SELECT activityno,activity_title,activity_type,email,TO_CHAR(start_date,'YYYY.MM.DD') as start_date, TO_CHAR(end_date,'YYYY.MM.DD') as end_date, nowattendance,maxattendance,TO_CHAR(write_date,'YYYY.MM.DD') as write_date, topping_count, activity_status, placeid FROM activityboard
+		WHERE activityno=#{value}
+	</select>
+	
+	<!-- 여기까지 -->
+	
+	<!-- place 테이블에 입력 -->
+	<select id="checkPlaceFromBestDestination" parameterType="pvo" resultType="boolean">
+		SELECT COUNT(-1) FROM place
+		WHERE placeid=#{placeId}
+	</select>
+	
+	<insert id="addPlaceToBestDestination" parameterType="pvo">
+		INSERT 
+		INTO place(placeId,latitude,longtitude,placename,placeimgurl,placedistrict)
+		VALUES(#{placeId},#{locationVO.latitude},#{locationVO.longtitude},#{placeName},#{placeImgUrl},#{placeDistrict})
+	</insert>
+	<update id="updatePlaceImg" parameterType="pvo">
+		UPDATE place
+		SET placeimgurl=#{placeImgUrl}
+		WHERE placeid=#{placeId}
+	</update>
+	
+	<!-- 사용자가 topping한 여행지 확인하기 -->
+	<select id="checkPlaceFromToppingList" parameterType="toppingList" resultType="boolean">
+		SELECT COUNT(-1)
+		FROM toppinglist
+		WHERE email=#{memberVO.email} AND placeID=#{placeVO.placeId} 
+	</select>
+	
+	<!-- toppingList테이블에 topping한 여행지 저장 -->
+	<insert id="addPlaceToTopping" parameterType="toppingList">
+	<selectKey keyProperty="toppingListNo" order="BEFORE" resultType="int">
+		SELECT topping_seq.nextVal From dual
+	</selectKey>
+		INSERT
+		INTO toppinglist(toppingno, email, placeid)
+		VALUES(#{toppingListNo},#{memberVO.email},#{placeVO.placeId})
+	</insert>
+	
+	<!-- 사용자가 topping한 여행지 삭제하기 -->
+	<delete id="deletePlaceFromTopping" parameterType="toppingList">
+		DELETE FROM toppinglist
+		WHERE email=#{memberVO.email} AND placeID=#{placeVO.placeId}
+	</delete>
+	
+	
+	<!-- 사용자가 topping한 여행지 목록 가져오기 -->
+	<select id="selectToppingListByEmail" parameterType="member" resultMap="toppingListRM">
+		SELECT *
+		FROM toppinglist
+		WHERE email=#{email}
+	</select>
+	
+	<!-- toppinglist의 placeid에 해당하는 갯수 가져와서 Topping_Count 업데이트 하기 -->
+	<update id="updateToppingCount" parameterType="toppingList">
+		UPDATE place
+		SET topping_count=(SELECT COUNT(-1) FROM toppingList WHERE placeId=#{placeVO.placeId})
+		WHERE placeId=#{placeVO.placeId}
+	</update>
+
+	<!-- 여행지의 Best여행지 목록 가져오기 -->
+	<select id="getBestDestinationForMain" resultMap="placeRM">
+		SELECT placeid, longtitude, latitude, 
+		placename, placeimgurl, topping_count, placedistrict 
+		FROM (SELECT * FROM place ORDER BY topping_count DESC) 
+		WHERE rownum &lt;= 3
+	</select>
+
+
+
+	<!-- 회원 정보 가져오기 -->
+	<resultMap type="member" id="memberRM">
+		<result property="email" column="email" jdbcType="VARCHAR"/>
+		<result property="nickName" column="nickname" jdbcType="VARCHAR"/>
+		<result property="password" column="password" jdbcType="VARCHAR"/>
+		<result property="gender" column="gender" jdbcType="VARCHAR"/>
+		<result property="imgUrl" column="img_url" jdbcType="VARCHAR"/>
+		<result property="checkAdmin" column="checkadmin" jdbcType="NUMERIC"/>
+		<result property="address" column="address" jdbcType="VARCHAR"/>
+		<result property="selfIntroduce" column="selfintroduce" jdbcType="VARCHAR"/>
+		<result property="passQuestion" column="passquestion" jdbcType="VARCHAR"/>
+		<result property="passAnswer" column="passanswer" jdbcType="VARCHAR"/>
+	</resultMap>
+	<select id="getMyInfo" parameterType="member" resultMap="memberRM">
+		SELECT email,nickname FROM member WHERE email=#{email}
+	</select>
+	
+	
+	<!-- MyPage -->
+	<select id="getCountOfToppingPlaceByEmail" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM toppinglist
+		WHERE email=#{value} AND activityNo is NULL
+	</select>
+	<select id="getListOfToppingPlaceByEmail" parameterType="hashmap" resultMap="toppingListRM">
+		SELECT toppingno, email, placeid
+		FROM
+			(SELECT toppingno, email, placeid, CEIL(rownum/15) as page
+		FROM
+			(SELECT toppingno, email, placeid			
+			FROM toppinglist
+			WHERE email=#{email} AND activityno is NULL))
+		WHERE page=#{pageNo}
+	</select>
+	
+	<select id="checkToppingByPlaceId" parameterType="hashmap" resultType="boolean">
+		SELECT COUNT(-1)
+		FROM toppinglist
+		WHERE email=#{email} AND placeid=#{placeId}
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

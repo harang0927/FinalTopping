@@ -1,0 +1,127 @@
+#row-main{
+	height: 100%;
+	margin-top: 120px;
+	border:1px solid black;
+	overflow-x: hidden; /* necessary to hide collapsed sidebars */
+}
+#content, .topping-sidebar{
+	min-height: 500px;
+}
+
+#content {
+	-webkit-transition: width 0.3s ease;
+	-moz-transition: width 0.3s ease;
+	-o-transition: width 0.3s ease;
+	transition: width 0.3s ease;
+}
+
+#content{
+	border: 1px solid blue;
+}
+
+#content .btn-group {
+	margin-bottom: 10px;
+}
+
+.col-md-6 .width-9, .col-md-6 .width-12, .col-md-9 .width-6, .col-md-9 .width-12,
+	.col-md-12 .width-6, .col-md-12 .width-9 {
+	display: none; /* just hiding labels for demo purposes */
+}
+
+.topping-sidebar {
+	background-color: lightgrey;
+	-webkit-transition: margin 0.3s ease;
+	-moz-transition: margin 0.3s ease;
+	-o-transition: margin 0.3s ease;
+	transition: margin 0.3s ease;
+	border:1px solid red;
+	weight: 100%;
+}
+
+.collapsed {
+	display: none; /* hide it for small displays */
+}
+
+@media ( min-width : 992px) {
+	.collapsed {
+		display: block;
+	}
+	#sidebar-left.collapsed {
+		margin-left: -25%; /* same width as sidebar */
+	}
+	#content.collapsed {
+		margin-right: -25%; /* same width as sidebar */
+	}
+}
+
+/*finished시작*/
+  .column {
+    width: 100%;
+    float: left;
+  }
+  .portlet {
+    margin: 0 1em 1em 0;
+    padding: 0.3em;
+  }
+  .portlet-header {
+    padding: 0.2em 0.3em;
+    margin-bottom: 0.5em;
+    position: relative;
+  }
+  .portlet-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    margin-top: -8px;
+  }
+  .portlet-content {
+    padding: 0.4em;
+  }
+  .portlet-placeholder {
+    border: 1px dotted black;
+    margin: 0 1em 1em 0;
+    height: 50px;
+  }
+  
+  /*==========*/
+
+#finished-Btn{
+	width : 100%;
+	border : 1px solid #c5c5c5;
+	padding : 5px;
+}
+
+/*finished끝*/
+
+/*토핑 시작*/
+  #sortable1, #sortable2 {
+    border: 1px solid #eee;
+    width: 100%;
+    min-height: 20px;
+    list-style-type: none;
+    margin: 0;
+    padding: 5px;
+    float: left;
+    margin-right: 10px;
+  }
+  #sortable1 li, #sortable2 li {
+  	width: 100%;
+    padding: 5px;
+    font-size: 1.2em;
+    
+  }
+/*토핑끝*/
+
+/* tourlist-finished 시작*/
+  #sortable2 { float: left; width: 100%; min-height: 12em; }
+  .sortable2.custom-state-active { background: #eee; }
+  .sortable2 li { float: left; width: 96px; padding: 0.4em; margin: 0 0.4em 0.4em 0; text-align: center; }
+  .sortable2 li h5 { margin: 0 0 0.4em; cursor: move; }
+  .sortable2 li a { float: right; }
+  .sortable2 li a.ui-icon-zoomin { float: left; }
+ 
+  #finish { width: 100%; min-height: 18em; padding: 1%; }
+  #finish h4 { line-height: 16px; margin: 0 0 0.4em; }
+  #finish h4 .ui-icon { float: left; }
+  #finish .sortable2 h5 { display: none; }
+/* tourlist-finished 끝*/

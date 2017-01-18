@@ -1,0 +1,45 @@
+#wirtenotice{
+	margin-top:120px;
+}
+.notice-write-table{
+	table-layout: fixed;
+}
+
+input[type=submit],.notice-write-cancel{
+	margin-right: 15px;
+	padding: 5px 10px;
+	background-color: #333;
+	color : #f5f5f5;
+	border-radius : 4px;
+	border: 1px solid #333;
+	text-align: right;
+}
+
+input[type=submit]:hover,.notice-write-cancel:hover{
+	background-color: #f5f5f5;
+	color : #23527c;
+	border: 1px solid #23527c;
+	cursor: pointer;
+}
+
+textarea{
+	resize:none;
+	scrollbar-face-color:#333;
+	scrollbar-arrow-color:#333;
+}
+
+.notice-write-input{
+	padding : 5px;
+	font-size: 13px;
+	line-height: 1.42857143;
+	color: #333;
+	word-break: break-word;
+	word-wrap: break-word;
+	background-color: #f5f5f5;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+table tr td{
+	vertical-align: middle;
+}

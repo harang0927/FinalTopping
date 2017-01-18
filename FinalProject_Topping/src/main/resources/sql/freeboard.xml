@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="FreeBoard">
+
+	<resultMap type="fbvo" id="freeboardRM">
+		<result property="postingNo" column="postingno" />
+		<result property="memberVO.email" column="email" />
+		<result property="memberVO.nickName" column="nickname" />
+		<result property="postingTitle" column="posting_title" />
+		<result property="content" column="content" />
+		<result property="postingHeader" column="posting_header" />
+		<result property="writeDate" column="write_date" />
+		<result property="hits" column="hits" />
+	</resultMap>
+
+
+	<!-- 자유게시판에 글쓰기 기능 -->
+	<insert id="addPostingToFreeBoard" parameterType="fbvo">
+		<selectKey keyProperty="postingNo" order="BEFORE"
+			resultType="int">
+			SELECT posting_seq.nextVal FROM dual
+		</selectKey>
+		INSERT INTO
+		freeboard(postingno,email,posting_title,content,write_date,posting_header)
+		VALUES(#{postingNo},#{memberVO.email},#{postingTitle},#{content},sysdate,#{postingHeader})
+	</insert>
+
+
+	<select id="selectByNoForDate" resultType="String"
+		parameterType="int">
+		SELECT
+		to_char(write_date, 'YYYY.MM.DD') write_date FROM
+		freeboard
+		WHERE postingno = #{value}
+	</select>
+
+
+	<!-- 자유게시판 글 삭제 기능 -->
+	<delete id="deletePostingFromFreeBoard" parameterType="int">
+		DELETE
+		FROM freeboard
+		WHERE postingno=#{postionNo}
+	</delete>
+
+
+
+	<!-- 자유게시판 글 수정 기능 -->
+	<update id="updateToPosting" parameterType="fbvo">
+		UPDATE freeboard
+		SET
+		posting_title=#{postingTitle},
+		content=#{content},
+		posting_header=#{postingHeader}
+		WHERE
+		postingno=#{postingNo}
+	</update>
+
+
+	<!-- 자유게시글 상세보기 -->
+	<select id="showPositngOnFreeBoard" resultMap="freeboardRM"
+		parameterType="int">
+
+		SELECT postingno, email, posting_title, content, posting_header, write_date,
+		hits
+		FROM freeboard
+		WHERE postingno=#{postingno}
+
+
+	</select>
+
+	<!-- 게시판 목록 불러오기 -->
+	<select id="getFreeBoardList" resultMap="freeboardRM">
+		SELECT postingno,
+		posting_title, posting_header, write_date, hits, nickname
+		FROM (
+		SELECT postingno, posting_title, posting_header, write_date, hits, nickname,
+		CEIL(rownum/5) as page
+		FROM(
+		SELECT postingno, posting_title, posting_header, to_char(write_date,
+		'YYYY.MM.DD') write_date, hits, m.nickname
+		FROM freeboard fb, member m
+		WHERE fb.email = m.email
+		ORDER BY postingno DESC
+		)
+		)WHERE page=#{value}
+	</select>
+
+
+	<!-- 자유게시글 조회수 올라가는 기능 -->
+	<update id="updateHitsOfPosting" parameterType="int">
+		UPDATE freeboard
+		SET hits=hits+1
+		WHERE
+		postingno=#{postingNo}
+	</update>
+
+	<!-- 게시글 전체 글 수 받아오는 기능 -->
+	<select id="totalCount" resultType="int">
+		SELECT COUNT(-1) FROM
+		freeboard
+	</select>
+
+
+
+
+	<resultMap type="fbvo" id="freeboardRM1">
+		<result property="postingNo" column="postingno" />
+		<result property="memberVO.email" column="email" />
+		<result property="memberVO.nickName" column="nickname" />
+		<result property="postingTitle" column="posting_title" />
+		<result property="content" column="content" />
+		<result property="postingHeader" column="posting_header" />
+		<result property="writeDate" column="write_date" />
+		<result property="hits" column="hits" />
+	</resultMap>
+
+	<!-- 게시글 별 글 분류 하기 -->
+	<!-- <select id="listbyPostingHeader" resultType="fbvo" parameterType="string" 
+		> SELECT postingno, nickname, posting_title, posting_header, write_date, 
+		hits FROM( SELECT postingno, nickname, posting_title, posting_header, CEIL(rownum/5) 
+		as page FROM( SELECT postingno, nickname, posting_title, posting_header, 
+		to_char(write_date, 'YYYY.MM.DD') write_date, hits FROM freeboard fb, member 
+		m FROM freeboard fb, member m WHERE fb.email = m.email and posting_header 
+		= #{value} ORDER BY postingno DESC ) ) WHERE page=#{value} </select> -->
+
+	<select id="listbyPostingHeader" resultMap="freeboardRM1"
+		parameterType="fblvo">
+		SELECT postingno, nickname, posting_title, posting_header, write_date, hits
+		FROM(
+		SELECT postingno, nickname, posting_title, posting_header,
+		write_date,CEIL(rownum/5) as page ,hits
+		FROM(
+		SELECT postingno, nickname, posting_title, posting_header,
+		to_char(write_date, 'YYYY.MM.DD') write_date, hits
+		FROM freeboard fb, member m
+		WHERE fb.email = m.email and posting_header = #{postingHeader}
+		ORDER BY postingno DESC
+		)
+		)
+		WHERE page=#{pageNo}
+	</select>
+
+
+	<select id="countByPostingHeader" parameterType="string"
+		resultType="int">
+		SELECT COUNT(-1) FROM freeboard
+		WHERE
+		posting_header=#{value}
+	</select>
+
+	<select id="getCountOfMyPosts" parameterType="string"
+		resultType="int">
+		SELECT COUNT(-1) FROM freeboard
+		WHERE email =#{value}
+	</select>
+	<select id="getListOfMyPosts" parameterType="hashmap" resultMap="freeboardRM1">
+		SELECT postingno, email, nickname, posting_title, posting_header,
+		write_date, hits
+		FROM(
+		SELECT postingno, email, nickname, posting_title, posting_header,
+		write_date,CEIL(rownum/15) as page ,hits
+		FROM(
+		SELECT postingno, fb.email, m.nickname, posting_title, posting_header,
+		to_char(write_date, 'YYYY.MM.DD') write_date, hits
+		FROM freeboard fb
+		JOIN member m
+		ON fb.email = m.email
+		WHERE m.email=#{email}
+		ORDER BY postingno DESC
+		)
+		)
+		WHERE page=#{pageNo}
+	</select>
+	<!-- comment -->
+	<insert id="addCommentToFreeBoard" parameterType="cmtvo">
+		<selectKey keyProperty="commentNo" resultType="int" order="BEFORE">
+			SELECT
+			tipcomment_seq.nextVal FROM dual
+		</selectKey>
+		INSERT INTO
+		freeboardcomment
+		(commentno,email,postingno,content,write_date) VALUES
+		(#{commentNo},#{memberVO.email},#{freeBoardVO.postingNo},#{content},sysdate)
+
+	</insert>
+
+	<resultMap type="cmtvo" id="FreeBoardCommentRM">
+		<result property="commentNo" column="commentno" jdbcType="NUMERIC" />
+		<result property="content" column="content" jdbcType="VARCHAR" />
+		<result property="memberVO.email" column="email" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="getAllCommentFromFreeBoard" parameterType="int"
+		resultMap="FreeBoardCommentRM">
+		SELECT email,content,commentno FROM freeboardcomment WHERE
+		postingno=#{value}
+		order by commentno desc
+	</select>
+
+	<update id="updateFreeBoardComment" parameterType="cmtvo">
+		UPDATE
+		freeboardcomment SET content=#{content} where commentno=#{commentNo}
+	</update>
+
+	<delete id="deleteFreeBoardComment" parameterType="int">
+		DELETE FROM
+		freeboardcomment WHERE commentno=#{value}
+	</delete>
+
+	<select id="getLatestCommentNo" resultType="int">
+		select
+		freeboardcomment_seq.currval from dual
+	</select>
+</mapper>

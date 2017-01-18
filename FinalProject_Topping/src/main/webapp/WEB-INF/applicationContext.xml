@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+<!-- 1. jdbc.properties 파일 placeholder,  BasicDataSource빈 등록 -->
+ <context:property-placeholder location="classpath:config/jdbc.properties"/>
+ <bean id="dataSourceSpied" class="org.apache.commons.dbcp.BasicDataSource">
+    <property name="driverClassName" value="${JDBC.Driver}"/>
+    <property name="url" value="${JDBC.ConnectionURL}"/>
+    <property name="username" value="${JDBC.Username}"/>
+    <property name="password" value="${JDBC.Password}"/>
+ </bean>
+<bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+   <constructor-arg ref="dataSourceSpied" />
+   <property name="logFormatter">
+      <bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+         <property name="loggingType" value="MULTI_LINE" />
+         <property name="sqlPrefix" value="SQL         :  "/>
+      </bean>
+   </property>
+</bean>
+
+
+
+<!-- 2. MyBatis 설정 부분 ::  sqlSessionFactory,sqlSession 둥록-->
+	<bean id="SqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:config/SqlMapConfig.xml"/>
+	</bean>
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg name="sqlSessionFactory" ref="SqlSessionFactory"/>
+	</bean>
+
+<!--3. MemberDao/MemberService 설정 ::id는 각각 memberDao, memberService -->
+	<bean id="memberDAO" class="model.dao.impl.MemberDAOImpl">
+	   <property name="sqlSession" ref="sqlSession"/>
+	</bean>
+	<bean id="memberService" class="model.service.impl.MemberServiceImpl">
+	   <property name="memberDAO" ref="memberDAO"/>      
+	</bean>
+	
+	<bean id="placeDAO" class="model.dao.impl.PlaceDAOImpl">
+	<property name="sqlSession" ref="sqlSession"></property>
+</bean>
+<bean id="placeService" class="model.service.impl.PlaceServiceImpl">
+	<property name="placeDAO" ref="placeDAO"></property>
+</bean>
+	
+	<bean id="activityDao" class="model.dao.impl.ActivityDAOImpl">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	<bean id="commonDAO" class="model.dao.impl.CommonDAOImpl">
+		<property name="sqlSession" ref="sqlSession" />
+	</bean>
+	
+	<bean id="activityService" class="model.service.impl.ActivityServiceImpl">
+		<property name="activityDao" ref="activityDao" />
+		<property name="commonDAO" ref="commonDAO" />
+	</bean>
+	
+	<bean id="commonService" class="model.service.impl.CommonServiceImpl">
+		<property name="commonDAO" ref="commonDAO" />
+	</bean>
+	
+	
+	<bean id="noticeDAO" class="model.dao.impl.NoticeDAOImpl">
+	   <property name="sqlSession" ref="sqlSession"/>
+	</bean>
+	<bean id="noticeService" class="model.service.impl.NoticeServiceImpl">
+	   <property name="noticeDAO" ref="noticeDAO"/>      
+	</bean>
+	<bean id="qnaDAO" class="model.dao.impl.QnADAOImpl">
+	   <property name="sqlSession" ref="sqlSession"/>
+	</bean>
+	<bean id="qnaService" class="model.service.impl.QnAServiceImpl">
+	   <property name="qnaDAO" ref="qnaDAO"/>      
+	</bean>
+	<bean id="freeBoardDAO" class="model.dao.impl.FreeBoardDAOImpl">
+		<property name="session" ref="sqlSession"/>
+	</bean>
+	<bean id="freeBoardService" class="model.service.impl.FreeBoardServiceImpl">
+		<property name="freeBoardDAO" ref="freeBoardDAO"/>
+	</bean>
+	<bean id="tipDAO" class="model.dao.impl.TipDAOImpl">
+		<property name="sqlSession" ref="sqlSession"/>
+	</bean>
+	<bean id="tipService" class="model.service.impl.TipServiceImpl">
+		<property name="tipDAO" ref="tipDAO"/>
+	</bean>
+	
+	
+	<bean id="myPageService" class="model.service.impl.MyPageServiceImpl">
+		<property name="memberDAO" ref="memberDAO"/>
+		<property name="qnaDAO" ref="qnaDAO"/>
+		<property name="activityDAO" ref="activityDao"/>
+		<property name="tipBoardDAO" ref="tipDAO"/>
+		<property name="freeBoardDAO" ref="freeBoardDAO"/>
+		<property name="placeDAO" ref="placeDAO"/>
+	</bean>
+	
+	<!-- TourCheckList -->
+	<bean id="tourCheckListDAO" class="model.dao.impl.TourCheckListDAOImpl">
+		<property name="sqlSession" ref="sqlSession"/>
+	</bean>
+	<bean id="tourCheckListService" class="model.service.impl.TourCheckListServiceImpl">
+		<property name="tourCheckListDAO" ref="tourCheckListDAO"/>
+	</bean>
+	
+	
+</beans>
+
+
+
+

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Common">
+
+	<insert id="uploadImage" parameterType="HashMap">
+		<selectKey keyProperty="imgNo" resultType="int" order="BEFORE">
+			SELECT
+			uploadimage_seq.nextVal FROM dual
+		</selectKey>
+		INSERT INTO uploadimage
+		(imgno,boardno,orgname,newname,boardtype,savepath)
+		VALUES
+		(#{imgNo},#{boardNo},#{orgName},#{newName},#{boardType},#{savePath})
+	</insert>
+
+	
+
+	<insert id="addPlace" parameterType="pvo">
+		INSERT INTO place
+		(placeid,latitude,longtitude,placename,placeimgurl)
+		VALUES
+		(#{placeId},#{locationVO.latitude},#{locationVO.longtitude},#{placeName},#{placeImgUrl})
+	</insert>
+
+</mapper>	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

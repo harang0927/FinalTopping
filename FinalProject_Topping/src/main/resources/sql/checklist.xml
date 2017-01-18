@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CheckList">
+	<resultMap type="tclvo" id="checkListRM">
+		<result property="tourNo" column="tourno" jdbcType="NUMERIC"/>
+		<result property="tourStatus" column="tour_status" jdbcType="NUMERIC" javaType="BOOLEAN"/>
+		<association property="memberVO" column="email" select="getMemberInfoForTourList"/>
+		<association property="toppingListVO" column="toppingno" select="Topping.getToppingInfoByNo"/>
+	</resultMap>
+	<select id="getMemberInfoForTourList" parameterType="string" resultMap="Member.memberSelectMap">
+		SELECT email, nickname
+		FROM member
+		WHERE email=#{value}
+	</select>
+	<select id="getCheckList" parameterType="string" resultMap="checkListRM">
+		SELECT tourno, toppingno, tour_status
+		FROM tourchecklist
+		WHERE email=#{email}
+		ORDER BY tourno DESC
+	</select>
+	<!-- 여기서 부터 시작 -->
+	<insert id="addCheckList" parameterType="tclvo">
+	<selectKey keyProperty="tourNo" order="BEFORE" resultType="int">
+		SELECT tourCheck_seq.nextVal From dual
+	</selectKey>
+		INSERT 
+		INTO tourchecklist(tourno,email,toppingno)
+		VALUES(#{tourNo},#{memberVO.email},#{toppingListVO.toppingListNo})
+	</insert>
+	
+	<delete id="deleteCheckList" parameterType="hashMap">
+		DELETE FROM tourchecklist
+		WHERE toppingno=#{toppingNo} AND email=#{email}
+	</delete>
+	
+	<!-- 상태값 변경하기.... HashMap으로 상태값이랑 보내기 -->
+	<update id="changeStateList" parameterType="hashmap">
+		UPDATE tourchecklist
+		<if test="status==false">
+			SET tour_status = 1
+		</if>
+		<if test="status==true">
+			SET tour_status = 0
+		</if>
+		WHERE tourNo=#{tourNo}
+	</update>
+	
+	<select id="getOneOfCheckList" parameterType="hashmap" resultMap="checkListRM">
+		SELECT *
+		FROM tourchecklist
+		WHERE email=#{email} AND toppingNo=#{toppingNo}
+	</select>
+	
+	<!-- <select id="getCheckList" parameterType="string" resultMap="checkListRM">
+		SELECT tourno, toppingno, tour_status
+		FROM tourchecklist
+		WHERE email=#{email}
+		ORDER BY tourno DESC
+	</select> -->
+</mapper>

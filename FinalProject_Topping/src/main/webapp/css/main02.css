@@ -1,0 +1,46 @@
+
+.main-title{
+	margin-top : 50px;
+}
+
+.main-map{
+	width:80%;
+	height:300px;
+	margin : 0px auto;
+}
+#main-search{
+	margin : 30px 0px;
+}
+#page-top{
+	position: fixed;
+	right: 2%;
+	bottom: 50px;
+	display: none;
+	z-index: 999;
+	cursor : pointer;
+}
+
+#page-top a{
+	text-decoration: none;
+}
+#page-top:hover{
+	color : orange;
+}
+/* detail-title */
+.main-preView{
+	padding: 50px 10px 10px 10px;
+}
+.main-preView:after{
+	float : none;
+}
+.main-preView-title{
+	font-size: 1.5em;
+}
+.main-preView-more{
+	font-size: 1em;;
+}
+
+#accordion{
+	display: none;
+}
+

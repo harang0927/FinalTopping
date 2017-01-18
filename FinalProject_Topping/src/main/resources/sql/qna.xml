@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="QnA">
+	<resultMap type="qnavo" id="qnaRM">
+		<result property="qnaNo" column="qnano" jdbcType="NUMERIC"/>
+		<result property="questionNo" column="questionno" jdbcType="NUMERIC"/>
+		<result property="memberVO.email" column="email" jdbcType="VARCHAR"/>
+		<result property="admin" column="admin" jdbcType="VARCHAR"/>
+		<result property="title" column="title" jdbcType="VARCHAR"/>
+		<result property="content" column="content" jdbcType="VARCHAR"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+	</resultMap>
+	<!-- 관리자/질문자 입장에서 질문 목록 보기 ResultMap -->
+	<resultMap type="qnavo" id="qnaListRM">
+		<result property="qnaNo" column="qnano" jdbcType="NUMERIC"/>
+		<result property="questionNo" column="questionno" jdbcType="NUMERIC"/>
+		<result property="memberVO.email" column="email" jdbcType="VARCHAR"/>
+		<result property="admin" column="admin" jdbcType="VARCHAR"/>
+		<result property="title" column="title" jdbcType="VARCHAR"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+	</resultMap>
+
+
+	
+	<insert id="writeQuestion" parameterType="qnavo">
+		<selectKey keyProperty="qnaNo" order="BEFORE" resultType="int">
+			SELECT qna_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO qna(qnaNo,email,questionNo,admin,title,content,write_date
+		)
+		VALUES(#{qnaNo},#{memberVO.email},#{qnaNo}, #{admin},#{title},#{content},sysdate)
+	</insert>
+		
+	<insert id="answerForUserQnA" parameterType="qnavo">
+		<selectKey keyProperty="qnaNo" order="BEFORE" resultType="int">
+			SELECT qna_seq.nextVal FROM dual
+		</selectKey>
+		INSERT 
+		INTO qna(qnano,email,questionno,admin,title,content,write_date
+		)
+		VALUES(#{qnaNo},#{memberVO.email},#{questionNo},
+		       #{admin},#{title},#{content},sysdate)
+	</insert>
+	
+	<delete id="deleteQnA" parameterType="int">
+		DELETE 
+		FROM qna 
+		WHERE questionno=#{questionNo}
+	</delete>
+	<select id="showQnA" parameterType = "int" resultMap="qnaRM">
+		SELECT qnaNo, questionno, admin, email, title, content, to_char(write_date,'YYYY.MM.DD') as write_date
+		FROM qna
+		WHERE qnaNo=#{qnaNo}
+		
+	</select>
+	<select id="getWriteDateOfQnA" parameterType="int" resultType="String">
+		SELECT to_char(write_date,'YYYY.MM.DD') as write_date 
+		FROM qna
+		WHERE qnano=#{value}
+	</select>
+	<select id="getListOfAllQnA" parameterType="string" resultMap="qnaListRM" >
+		SELECT qnano,questionno,email,admin,title,write_date
+		FROM (SELECT qnano, questionno, email,admin,title,write_date, CEIL(rownum/5) as page FROM
+			 (SELECT qnano, questionno, email,admin,title, to_char(write_date,'YYYY.MM.DD') as write_date 
+			 FROM qna 
+			 ORDER BY questionno DESC))
+		WHERE page=#{value}
+	</select>
+	
+	<select id="getCountOfMyQnA" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM qna
+		WHERE email=#{email}
+	</select>
+	<select id="getListOfMyQnA" parameterType="model.vo.PagingQnAVO" resultMap="qnaListRM">
+		SELECT qnano,questionno,email,admin,title,write_date
+		FROM (SELECT qnano, questionno, email,admin,title,write_date, CEIL(rownum/15) as page FROM
+			 (SELECT qnano, questionno, email,admin,title, to_char(write_date,'YYYY.MM.DD') as write_date 
+			 FROM qna WHERE email=#{email}
+			 ORDER BY questionno DESC))
+		WHERE page=#{pageNo}
+	</select>
+	<select id="totalCount" resultType="int">
+		SELECT COUNT(-1) 
+		FROM qna
+	</select>
+	
+</mapper>	
+

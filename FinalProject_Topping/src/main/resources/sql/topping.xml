@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Topping">
+	<resultMap type="tplvo" id="toppingRM">
+		<result property="toppingListNo" column="toppingno" jdbcType="NUMERIC"/>
+		<association property="memberVO" column="email" select="selectMember" />
+		<association property="activityBoardVO" column="activityno" select="selectActivity" />
+		<association property="placeVO" column="placeid" select="selectPlace" />
+	</resultMap>
+	<select id="selectMember" parameterType="string" resultMap="Member.memberSelectMap">
+		SELECT email,nickname
+		FROM member
+		WHERE email=#{value}
+	</select>
+	<select id="selectActivity" parameterType="int" resultMap="Activity.ActivityListRM">
+		SELECT activityno, activity_title,activity_type,TO_CHAR(start_date,'YYYY.MM.DD') as start_date,TO_CHAR(end_date,'YYYY.MM.DD') as end_date,nowattendance,maxattendance,activity_status
+		FROM activityboard
+		WHERE activityno=#{value}
+	</select>
+	<select id="selectPlace" parameterType="string" resultMap="Place.placeRM">
+		SELECT placeid,placename,placedistrict
+		FROM place
+		WHERE placeid=#{value}
+	</select>
+	
+	<select id="getToppingInfoByNo" parameterType="int" resultMap="toppingRM">
+		SELECT toppingno,email,activityno,placeid
+		FROM toppinglist
+		WHERE toppingno=#{value}
+	</select>
+	
+	<select id="getToppingList" parameterType="string" resultMap="toppingRM">
+		SELECT toppingno,activityno,placeid
+		FROM toppinglist
+		WHERE email = #{value}
+	</select>
+</mapper>

@@ -1,0 +1,108 @@
+/*
+    Theme Name: NiceAdmin
+    Theme URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
+    Author: BootstrapMade
+    Author URL: https://bootstrapmade.com
+*/
+/* Import fonts */
+
+@import url(https://fonts.googleapis.com/css?family=Lato:400,300,300italic,400italic,600,600italic,700,700italic,800,800italic);
+
+@import url(line-icons.css);
+
+#main-content{
+	margin-top:100px;
+}
+
+
+#main-content>ul>li>a{
+	font-size: 20px;
+}
+
+.wrapper {
+
+    display: inline-block;
+
+    padding: 20px;
+
+    width: 100%;
+
+}
+
+
+.check01{
+	color:#333333;
+}
+
+.check02{
+	color:#cccccc;
+}
+
+
+/*table*/
+
+.free-table tr th { 
+	color: #688a7e;
+	text-align: center;
+}
+
+.free-table td{
+	text-align: center;
+}
+.free-title{
+	text-align: left!important;
+}
+
+/* 글쓰기&페이징 */
+#free-footer{
+	margin:5px
+}
+
+#free-paging{
+	padding: 15px 10px;
+	text-align: center;
+	color: orange;
+}
+
+#free-writeBtn{
+	padding: 15px 10px;
+	text-align: right;
+}
+#free-writeBtn>a{
+	margin-right: 15px;
+	padding: 5px 10px;
+	background-color: #333;
+	color : #f5f5f5;
+	border-radius : 4px;
+	border: 1px solid #333;
+}
+#free-writeBtn>a:hover{
+	background-color: #f5f5f5;
+	color : #23527c;
+	border: 1px solid #23527c;
+}
+
+/*community-tabs*/
+#how-tabs{
+	font-size: 1.8em;
+	
+}
+#how-tabs ul{
+	list-style: none;
+	padding: 0px 10px;
+}
+#how-tabs ul li{
+	display:inline;
+	margin-left : 5px;
+}
+
+#how-tabs ul li a{
+	padding: 10px 15px;
+	text-decoration: none;
+}
+
+#how-tabs ul li a:hover{
+	/* border-bottom: 1px solid orange; */
+	color:#02bdd5;
+	/* border-bottom: 1px solid #02bdd5; */
+}

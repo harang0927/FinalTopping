@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+<!-- 4. 라이브러리빈 설정부분 :: handlerMapping, viewResolver-->
+<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	<property name="prefix" value="/"></property>
+	<property name="suffix" value=".jsp"></property>
+	<property name="order" value="1"></property>
+</bean>
+
+<bean id="beanNameResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
+	<property name="order" value="0"></property>
+</bean>
+
+<!-- FileUpload 기술을 적용할때는 무조건 MultipartFile 빈을 정의 -->
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+	<property name="defaultEncoding" value="utf-8"/>
+	<property name="maxUploadSize" value="-1"></property>
+</bean>
+
+<!-- Ajax Json View를 등록 -->
+<bean name="JsonView" class="org.springframework.web.servlet.view.json.MappingJacksonJsonView"/>
+
+<!-- 5. 컨트롤러 설정부분 :: methodNameResolver, MemberController-->
+ <bean id="methodNameResolver" class="org.springframework.web.servlet.mvc.multiaction.ParameterMethodNameResolver">
+    <property name="paramName" value="command"/>
+ </bean>
+ 
+ <bean name="/member.do" class="controller.MemberController">
+    <property name="methodNameResolver" ref="methodNameResolver"/>
+    <property name="memberService" ref="memberService"/>
+ </bean>
+  <bean name="/notice.do" class="controller.NoticeController">
+    <property name="methodNameResolver" ref="methodNameResolver"/>
+    <property name="noticeService" ref="noticeService"/>
+ </bean>
+ <bean name="/qna.do" class="controller.QnAController">
+    <property name="methodNameResolver" ref="methodNameResolver"/>
+    <property name="qnaService" ref="qnaService"/>
+ </bean>
+ <bean name="/activity.do" class="controller.ActivityController">
+	<property name="methodNameResolver" ref="methodNameResolver" />
+	<property name="activityService" ref="activityService" />
+	<property name="commonService" ref="commonService"></property>
+	<property name="path">
+		<value>C:/Users/kosta/git/Final/FinalProject_Merge_JHY/src/main/webapp/activity_upload/</value>
+	</property>
+ </bean>
+  	<bean name="/freeboard.do" class="controller.FreeBoardController">
+		<property name="methodNameResolver" ref="methodNameResolver" />
+		<property name="freeBoardService" ref="freeBoardService" />
+		<property name="memberService" ref="memberService"></property>   
+	</bean>
+
+<bean name="/mypage.do" class="controller.MyPageController">
+		<property name="methodNameResolver" ref="methodNameResolver"/>
+		<property name="myPageService" ref="myPageService"></property>
+		<property name="userImagePath" value="C:/Users/kosta/git/Final/FinalProject_Merge_JHY/src/main/webapp/images/UserImages/"/>
+	</bean>
+	
+	<bean name="/tip.do" class="controller.TipController">
+		<property name="methodNameResolver" ref="methodNameResolver"/>
+		<property name="tipService" ref="tipService"></property>
+		<property name="commonService" ref="commonService"></property>
+		<property name="path" value="C:/Users/kosta/git/Final/FinalProject_Merge_JHY/src/main/webapp/tip_upload/"></property>
+	</bean>
+	<bean name="/place.do" class="controller.PlaceController">
+		<property name="methodNameResolver" ref="methodNameResolver"/>
+		<property name="placeService" ref="placeService"></property>
+	</bean>
+	
+	<bean name="/checkList.do" class="controller.TourCheckListController">
+		<property name="methodNameResolver" ref="methodNameResolver"/>
+		<property name="tourCheckListService" ref="tourCheckListService"/>
+	</bean>
+</beans>
+

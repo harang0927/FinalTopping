@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Activity">
+
+	<!-- 목록보기를 위한 resulMap -->
+	<resultMap type="abvo" id="ActivityListRM">
+		<result property="activityNo" column="activityno" jdbcType="NUMERIC" />
+		<result property="activityTitle" column="activity_title" jdbcType="VARCHAR" />
+		<result property="activityType" column="activity_type" jdbcType="VARCHAR" />
+		<result property="activityStatus" column="activity_status" jdbcType="NUMERIC" />
+		<result property="startDate" column="start_date" jdbcType="DATE" />
+		<result property="endDate" column="end_date" jdbcType="DATE"/>
+		<result property="writeDate" column="write_date" jdbcType="DATE"/>
+		<result property="toppingCount" column="topping_count" jdbcType="NUMERIC"/>
+		<result property="nowAttendance" column="nowattendance" jdbcType="NUMERIC" />
+		<result property="maxAttendance" column="maxattendance" jdbcType="NUMERIC" />
+		<result property="placeVO.placeId" column="placeid" jdbcType="VARCHAR" />
+		<association property="memberVO" column="email" select="nickNameByEmail"></association>
+	</resultMap>
+	<select id="nickNameByEmail" parameterType="string" resultMap="Member.memberSelectMap">
+		SELECT email,nickname
+		FROM member
+		WHERE email=#{email}
+	</select>
+
+	<!-- 상세보기를 위한 resultMap -->
+	<resultMap type="abvo" id="ActivityDetailRM" extends="ActivityListRM">
+		<result property="writeDate" column="write_date" jdbcType="DATE" />
+		<result property="content" column="content" jdbcType="VARCHAR" />
+
+		<result property="imgUrl" column="img_url" jdbcType="VARCHAR" />
+		<result property="endDate" column="end_date" jdbcType="DATE" />
+
+	</resultMap>
+
+	<resultMap type="uivo" id="UploadImageRM">
+		<result property="imgNo" column="imgno" jdbcType="NUMERIC" />
+		<result property="boardNo" column="boardno" jdbcType="NUMERIC" />
+		<result property="orgName" column="orgname" jdbcType="VARCHAR" />
+		<result property="newName" column="newname" jdbcType="VARCHAR" />
+		<result property="boardType" column="boardtype" jdbcType="NUMERIC" />
+		<result property="savePath" column="savepath" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap type="aavo" id="ActivityAttendanceListRM">
+		<result property="email" column="email" jdbcType="VARCHAR" />
+		<result property="activityNo" column="activityno" jdbcType="NUMERIC" />
+	</resultMap>
+	<insert id="createActivity" parameterType="abvo">
+		<selectKey keyProperty="activityNo" resultType="int" order="BEFORE">
+			SELECT
+			activityboard_seq.nextVal FROM dual
+		</selectKey>
+		INSERT INTO activityboard
+		(activityno,activity_title,email,activity_type,content,
+		start_date,end_date,
+		maxattendance,write_date,placeid)
+		VALUES
+		(#{activityNo},#{activityTitle},#{memberVO.email},#{activityType},#{content},#{startDate},#{endDate},
+		#{maxAttendance},sysdate,#{placeVO.placeId})
+	</insert>
+
+	<select id="getUploadImageForActivity" parameterType="int" resultMap="UploadImageRM">
+		SELECT * FROM uploadImage WHERE boardno=#{num} AND
+		boardType=0
+	</select>
+
+	<!-- <select id="showActivityByNo" parameterType="int" resultMap="ActivityDetailRM">
+		SELECT *
+		FROM activityboard WHERE activityno=#{value}
+	</select> -->
+	
+	
+	<select id="showActivityByNo" parameterType="int" resultMap="ActivityDetailRM">
+		SELECT activityno,activity_title,email,activity_type, write_date, 
+		email, content, TO_CHAR(start_date, 'YYYY.MM.DD') as start_date,TO_CHAR(end_date, 'YYYY.MM.DD') as end_date,
+		nowattendance, maxattendance, topping_count, activity_status, placeid
+		FROM activityboard WHERE activityno=#{value}
+	</select>
+
+	<select id="getActivityList" resultMap="ActivityListRM" parameterType="hashmap">
+   select * 
+   from (select  activityNo, activity_type, activity_title, TO_CHAR(start_date, 'YYYY.MM.DD') as start_date,TO_CHAR(end_date, 'YYYY.MM.DD') as end_date,nowattendance, maxattendance, TO_CHAR(write_date, 'YYYY.MM.DD') as write_date, topping_count, rownum rnum
+   from (select *
+      from activityboard 
+      WHERE end_date &gt;=sysdate
+      <if test="title neq null">
+         AND activity_title LIKE '%'|| #{title} ||'%'
+      </if>
+      <if test="type1 neq null">
+         AND activity_type IN 
+         <foreach collection="type1" item="type" index="index"  open="(" close=")" separator=",">
+            #{type}
+         </foreach>
+      </if>
+      ORDER BY
+      <choose>
+      <when test="type2 == 'best'">
+			topping_count DESC, activityno ASC
+		</when>
+		<when test="type2 == 'dueend'">
+			end_date ASC, activityno ASC
+		</when>	
+      <otherwise>
+         activityno DESC
+      </otherwise>
+      </choose>
+   )) where rnum &lt;=6
+   </select>
+
+	<select id="infiniteScrollDown" parameterType="hashmap" resultMap="ActivityListRM">
+		select * 
+		from (select activityNo, activity_type, activity_Title, TO_CHAR(start_date, 'YYYY.MM.DD') as start_date,TO_CHAR(end_date, 'YYYY.MM.DD') as end_date,nowattendance, maxattendance,  TO_CHAR(write_date, 'YYYY.MM.DD') as write_date, topping_count, rownum rnum
+		from(select *
+		from
+		activityboard 
+		WHERE end_date &gt;= sysdate
+		<if test="title neq null and title neq ''">
+			AND activity_Title LIKE '%'|| #{title} ||'%'
+		</if>
+		<if test="list neq null">
+			AND activity_type IN 
+			<foreach item="type1" index="index" collection="array" open="(" close=")" separator=", ">
+				#{type[index]}
+			</foreach>
+		</if>
+		ORDER BY 
+		<choose>
+		<when test="type2 == 'best'">
+			topping_count DESC, activityno ASC
+		</when>
+		<when test="type2 == 'dueend'">
+			end_date ASC, activityno ASC
+		</when>	
+		<otherwise>
+			activityno DESC
+		</otherwise>
+		</choose>
+		) ) where rnum between ${scrollStart}+1 and ${scrollStart}+6
+		<!-- where rownum &lt;=#{scrollStart} -->
+	</select>
+
+
+	<select id="getToppingCount" parameterType="int" resultType="int">
+		SELECT COUNT(-1)
+		FROM
+		toppinglist WHERE activityno=#{value}
+	</select>
+	
+
+	<select id="getCountOfAllActivity" resultType="int">
+		SELECT COUNT(-1)
+		FROM
+		activityboard
+	</select>
+
+
+	<update id="updateActivity" parameterType="abvo">
+		UPDATE activityboard
+		SET
+		activity_title=#{activityTitle},activity_type=#{activityType},content=#{content},maxattendance=#{maxAttendance},
+		placeid=#{placeVO.placeId}
+		WHERE activityno=#{activityNo}
+	</update>
+
+	<update id="updateActivityImg" parameterType="HashMap">
+		UPDATE
+		uploadimg
+		SET
+		orgname=#{orgName},newname=#{newName},
+		savepath=#{savePath}
+		WHERE
+		imgno=${imgNo}
+	</update>
+
+	<delete id="deleteActivity" parameterType="abvo">
+		DELETE FROM
+		activityboard
+		WHERE activityno=#{activityNo}
+	</delete>
+	<delete id="deleteActivityImg" parameterType="int">
+		DELETE FROM
+		uploadimage
+		WHERE imgno=${value} AND boardType=0
+	</delete>
+
+	<select id="checkActivityFromToppingList" parameterType="tlvo"
+		resultType="int">
+		SELECT
+		COUNT(-1)
+		FROM
+		toppinglist WHERE
+		email=#{memberVO.email} AND activityNo=#{activityBoardVO.activityNo}
+	</select>
+
+	<insert id="addActivityToToppingList" parameterType="tlvo">
+		<selectKey keyProperty="toppingListNo" resultType="int"
+			order="BEFORE">
+			SELECT
+			topping_seq.nextVal FROM dual
+		</selectKey>
+		INSERT INTO toppinglist (toppingno,email,activityno)
+		VALUES
+		(#{toppingListNo},#{memberVO.email},#{activityBoardVO.activityNo})
+	</insert>
+	<delete id="deleteActivityFromToppingList" parameterType="tlvo">
+		DELETE
+		FROM
+		toppinglist
+		WHERE email=#{memberVO.email} AND
+		activityNo=#{activityBoardVO.activityNo}
+	</delete>
+
+	<!-- Update ToppingCount -->
+	<update id="updateActivityToppingCount" parameterType="int">
+		UPDATE activityboard 
+		SET topping_count=(SELECT COUNT(-1) FROM toppinglist WHERE activityno=${value})
+		WHERE activityno=${value}
+	</update>
+
+	<update id="updateActivityAttendance" parameterType="int">
+		UPDATE
+		activityboard SET nowattendance=(SELECT COUNT(-1) FROM activityattendance WHERE activityno=${value}) 
+		WHERE activityno=${value}
+	</update>
+	
+	<select id="checkFromActivityAttendance" parameterType="aavo"
+		resultType="int">
+		SELECT COUNT(-1)
+		FROM activityattendance 
+		WHERE email='${memberVO.email}' AND activityNo=${activityBoardVO.activityNo}
+	</select>
+	<insert id="joinActivity" parameterType="aavo">
+		INSERT INTO
+		activityattendance (email,activityno)
+		VALUES('${memberVO.email}',${activityBoardVO.activityNo})
+	</insert>
+
+	<delete id="exitActivity" parameterType="aavo">
+		DELETE FROM
+		activityattendance WHERE email='${memberVO.email}' AND
+		activityno=${activityBoardVO.activityNo}
+	</delete>
+
+	<select id="checkVacancyOfActivity" parameterType="aavo" resultType="int">
+		SELECT COUNT(-1)
+		FROM activityattendance 
+		WHERE activityno=${activityBoardVO.activityNo}
+	</select>
+
+	<select id="getActivityAttendanceList" parameterType="int"
+		resultMap="ActivityAttendanceListRM">
+		SELECT * FROM activityattendance WHERE activityNo=${value}
+	</select>
+	<select id="getCountOfActivityByType" parameterType="string"
+		resultMap="ActivityListRM">
+		SELECT COUNT(-1) FROM activityboard WHERE activity_type=${value}
+	</select>
+
+	<select id="getActivityByType" parameterType="string" resultMap="ActivityListRM">
+		SELECT * FROM
+		activityboard WHERE
+		activity_type=${value}
+	</select>
+
+
+	<select id="getBestActivityByDistrict">
+		SELECT activityno FROM toppinglist
+
+	</select>
+
+
+	<select id="getActivityByTitle" parameterType="string"
+		resultMap="ActivityListRM">
+		SELECT * FROM
+		activityboard WHERE activity_title=${value}
+	</select>
+
+	<select id="getActivityByWriter" parameterType="string"
+		resultMap="ActivityListRM">
+		SELECT * FROM
+		activityboard WHERE email=${value}
+	</select>
+
+	<select id="getActivityByContent" parameterType="string">
+
+	</select>
+
+
+
+
+<!-- MyPage -->
+	<select id="getCountOfMyActivity" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM activityboard
+		WHERE email=#{email}
+	</select>
+	<select id="getListOfMyActivity" parameterType="hashmap" resultMap="ActivityListRM">
+		SELECT
+		activityno,activity_title,activity_type,email,start_date,end_date,nowattendance,maxattendance,topping_count,activity_status,placeid
+		FROM (SELECT activityno, activity_title,activity_type,
+		email, start_date, end_date,nowattendance,maxattendance,topping_count,activity_status,placeid,
+		CEIL(rownum/15)	as page 
+		FROM
+		(SELECT activityno,
+		activity_title,activity_type,
+		email,
+		to_char(start_date,'YYYY.MM.DD') as
+		start_date,to_char(end_date,'YYYY.MM.DD') as
+		end_date,nowattendance,maxattendance,topping_count,activity_status,placeid
+		FROM activityboard WHERE email=#{email}
+		ORDER BY activityno
+		DESC))
+		WHERE page=#{pageNo}
+	</select>
+	
+	
+	<select id="getCountOfAttendActivity" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM activityattendance
+		WHERE email=#{email}
+	</select>
+	<select id="getListOfAttendActivity" parameterType="hashmap" resultMap="ActivityListRM">
+		SELECT
+		activityno,activity_title,activity_type,email,nickname,start_date,end_date,nowattendance,maxattendance,topping_count,activity_status,placeid
+		FROM (SELECT activityno, activity_title,activity_type,
+		email,nickname,start_date,end_date,nowattendance,maxattendance,topping_count,activity_status,placeid,
+		CEIL(rownum/15)	as page 
+		FROM
+		(SELECT ta.activityno,
+		activity_title,activity_type,
+		ab.email,m.nickname,
+		to_char(start_date,'YYYY.MM.DD') as
+		start_date,to_char(end_date,'YYYY.MM.DD') as
+		end_date,nowattendance,maxattendance,topping_count,activity_status,placeid
+		FROM activityboard ab
+		JOIN activityattendance ta
+		ON ab.activityno = ta.activityno
+		JOIN member m
+		ON ab.email = m.email
+		WHERE ta.email=#{email}
+		ORDER BY ta.activityno
+		DESC))
+		WHERE page=#{pageNo}
+	</select>
+	
+	
+	<select id="getCountOfToppingActivityByEmail" parameterType="string" resultType="int">
+		SELECT COUNT(-1)
+		FROM toppinglist
+		WHERE email=#{value} AND placeid is NULL
+	</select>
+	<select id="getListOfToppingActivityByEmail" parameterType="hashmap" resultMap="Place.toppingListRM">
+		SELECT toppingno,activityno,placeid
+		FROM (SELECT toppingno,activityno,placeid, CEIL(rownum/15) as page 
+				FROM (SELECT toppingno,activityno,placeid
+						FROM toppinglist
+						WHERE email=#{email} AND placeid is NULL
+						ORDER BY activityno DESC))
+		WHERE page=#{pageNo}
+	</select>
+	
+	<!-- Main02.jsp에 목록을 불러오고 해당 유저가 토핑한 것인지 체크 -->
+	<select id="getPopularActivityForMain" resultMap="ActivityListRM">
+		SELECT activityno,activity_title, topping_count, nowattendance, maxattendance, TO_CHAR(start_date,'YYYY.MM.DD') as start_date, TO_CHAR(end_date, 'YYYY.MM.DD') as end_date
+		FROM (SELECT * FROM activityboard WHERE end_date &gt;=sysdate ORDER BY topping_count DESC)
+		WHERE rownum &lt;=3
+	</select>
+	<select id="checkToppingByNo" parameterType="hashmap" resultType="boolean">
+		SELECT COUNT(-1)
+		FROM toppinglist
+		WHERE email=#{email} AND activityno=#{actNo}
+	</select>
+	<select id="getCountToppingCountByNo" parameterType="int" resultType="int">
+		SELECT topping_count
+		FROM activityboard
+		WHERE activityno=#{value}
+	</select>
+
+
+	<!-- comment -->
+   <insert id="addCommentToActivity" parameterType="cmtvo">
+      <selectKey keyProperty="commentNo" resultType="int" order="BEFORE">
+         SELECT
+         activitycomment_seq.nextVal FROM dual
+      </selectKey>
+      INSERT INTO
+      activitycomment
+      (commentno,email,activityno,content,write_date) VALUES
+      (#{commentNo},#{memberVO.email},#{activityBoardVO.activityNo},#{content},sysdate)
+
+   </insert>
+
+   <resultMap type="cmtvo" id="ActivityCommentRM">
+      <result property="commentNo" column="commentno" jdbcType="NUMERIC" />
+      <result property="content" column="content" jdbcType="VARCHAR" />
+      <association property="memberVO" column="email" select="nickNameByEmail"></association>
+   </resultMap>
+
+   <select id="getAllCommentFromActivityBoard" parameterType="int"
+      resultMap="ActivityCommentRM">
+      SELECT email,content,commentno FROM activitycomment WHERE
+      activityno=#{value}
+      order by commentno desc
+   </select>
+
+   <update id="updateActivityComment" parameterType="cmtvo">
+      UPDATE
+      activitycomment SET content=#{content} where commentno=#{commentNo}
+   </update>
+
+   <delete id="deleteActivityComment" parameterType="int">
+      DELETE FROM
+      activitycomment WHERE commentno=#{value}
+   </delete>
+
+   <select id="getLatestCommentNo" resultType="int">
+      select
+      activitycomment_seq.currval from dual
+   </select>
+</mapper>	

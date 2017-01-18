@@ -1,0 +1,27 @@
+#showqna{
+	margin-top:120px;
+}
+#showqna-table{
+	table-layout: fixed;
+}
+
+#qnashowBtn{
+	margin-right: 15px;
+	padding: 5px 10px;
+	text-align: right;
+}
+
+#qnashowBtn input[type=button],#qnashowBtn a{
+	margin-right: 15px;
+	padding: 5px 10px;
+	background-color: #333;
+	color : #f5f5f5;
+	border-radius : 4px;
+	border: 1px solid #333;
+}
+#qnashowBtn input[type=button]:hover,,#qnashowBtn a:hover{
+	background-color: #f5f5f5;
+	color : #23527c;
+	border: 1px solid #23527c;
+	cursor: pointer;
+}
